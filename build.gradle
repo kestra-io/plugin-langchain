@@ -57,7 +57,7 @@ dependencies {
     implementation 'dev.langchain4j:langchain4j-open-ai:1.0.0-alpha1'
     implementation 'dev.langchain4j:langchain4j-ollama:1.0.0-alpha1'
     implementation 'dev.langchain4j:langchain4j-google-ai-gemini:1.0.0-alpha1'
-    implementation 'dev.langchain4j:langchain4j-vertex-ai:1.0.0-alpha1'
+    implementation 'dev.langchain4j:langchain4j-vertex-ai:1.0.0-beta3-SNAPSHOT'
 
     testImplementation 'org.testcontainers:ollama:1.20.6'
 
