@@ -3,13 +3,12 @@ package io.kestra.plugin.langchain4j;
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
-import io.kestra.plugin.langchain4j.dto.text.ChatModelFactory;
-import io.kestra.plugin.langchain4j.dto.text.Provider;
-import io.kestra.plugin.langchain4j.dto.text.ProviderConfig;
+import io.kestra.plugin.langchain4j.domain.ChatConfiguration;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -102,9 +101,15 @@ public class Classification extends Task implements RunnableTask<Classification.
     @NotNull
     private Property<List<String>> classes;
 
-    @Schema(title = "Provider Configuration", description = "Configuration for the provider (e.g., API key, model name, endpoint).")
+    @Schema(title = "Language Model Provider")
     @NotNull
-    private ProviderConfig provider;
+    @PluginProperty
+    private ModelProvider provider;
+
+    @NotNull
+    @PluginProperty
+    @Builder.Default
+    private ChatConfiguration configuration = ChatConfiguration.empty();
 
     @Override
     public Classification.Output run(RunContext runContext) throws Exception {
@@ -114,20 +119,15 @@ public class Classification extends Task implements RunnableTask<Classification.
         String renderedPrompt = runContext.render(prompt).as(String.class).orElseThrow();
         List<String> renderedClasses = runContext.render(classes).asList(String.class);
 
-        Provider renderedType = runContext.render(provider.getType()).as(Provider.class).orElseThrow();
-        String renderedModelName = runContext.render(provider.getModelName()).as(String.class).orElse(null);
-        String renderedApiKey = runContext.render(provider.getApiKey()).as(String.class).orElse(null);
-        String renderedEndpoint = runContext.render(provider.getEndPoint()).as(String.class).orElse(null);
-
         // Get the appropriate model from the factory
-        ChatLanguageModel model = ChatModelFactory.createModel(renderedType, renderedApiKey, renderedModelName, renderedEndpoint);
+        ChatLanguageModel model = this.provider.chatLanguageModel(runContext, configuration);
 
         String classificationPrompt = renderedPrompt +
             "\nRespond by only one of the following classes by typing just the exact class name: " + renderedClasses;
 
         // Perform text classification
-        String classificationResponse = model.generate(classificationPrompt).trim();
-        logger.info("Generated Classification: {}", classificationResponse);
+        String classificationResponse = model.chat(classificationPrompt);
+        logger.debug("Generated Classification: {}", classificationResponse);
 
         return Output.builder()
             .classification(classificationResponse)

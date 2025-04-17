@@ -1,17 +1,15 @@
 package io.kestra.plugin.langchain4j;
 
-
 import dev.langchain4j.model.chat.ChatLanguageModel;
 import dev.langchain4j.model.input.Prompt;
 import dev.langchain4j.model.input.PromptTemplate;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
-import io.kestra.plugin.langchain4j.dto.text.ChatModelFactory;
-import io.kestra.plugin.langchain4j.dto.text.Provider;
-import io.kestra.plugin.langchain4j.dto.text.ProviderConfig;
+import io.kestra.plugin.langchain4j.domain.ChatConfiguration;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -103,26 +101,23 @@ public class Rag extends Task implements RunnableTask<Rag.Output> {
     @NotNull
     private Property<String> context;
 
-    @Schema(title = "Provider Configuration", description = "Configuration for the provider (e.g., API key, model name)")
+    @Schema(title = "Language Model Provider")
     @NotNull
-    private ProviderConfig provider;
+    @PluginProperty
+    private ModelProvider provider;
+
+    @NotNull
+    @PluginProperty
+    @Builder.Default
+    private ChatConfiguration configuration = ChatConfiguration.empty();
 
     @Override
     public Rag.Output run(RunContext runContext) throws Exception {
         // Render input properties
         String renderedPrompt = runContext.render(prompt).as(String.class).orElseThrow();
         String renderedContext = runContext.render(context).as(String.class).orElseThrow();
-        String renderedModelName = runContext.render(provider.getModelName()).as(String.class).orElse(null);
-        String renderedApiKey = runContext.render(provider.getApiKey()).as(String.class).orElse(null);
-        String renderedEndpoint = runContext.render(provider.getEndPoint()).as(String.class).orElse(null);
-        Provider renderedType = runContext.render(provider.getType()).as(Provider.class).orElseThrow();
 
-        ChatLanguageModel chatModel = ChatModelFactory.createModel(
-            renderedType,
-            renderedApiKey,
-            renderedModelName,
-            renderedEndpoint
-        );
+        ChatLanguageModel chatModel = provider.chatLanguageModel(runContext, configuration);
 
         // Create a prompt template for RAG
         PromptTemplate promptTemplate = PromptTemplate.from(
@@ -141,7 +136,7 @@ public class Rag extends Task implements RunnableTask<Rag.Output> {
         );
 
         // Generate the response using the chat model
-        String response = chatModel.generate(ragPrompt.text());
+        String response = chatModel.chat(ragPrompt.text());
 
         return Output.builder()
             .response(response)

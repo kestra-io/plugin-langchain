@@ -9,13 +9,12 @@ import dev.langchain4j.model.chat.request.json.JsonObjectSchema;
 import dev.langchain4j.model.chat.request.json.JsonSchema;
 import dev.langchain4j.model.chat.response.ChatResponse;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
-import io.kestra.plugin.langchain4j.dto.text.ChatModelFactory;
-import io.kestra.plugin.langchain4j.dto.text.Provider;
-import io.kestra.plugin.langchain4j.dto.text.ProviderConfig;
+import io.kestra.plugin.langchain4j.domain.ChatConfiguration;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -95,9 +94,15 @@ public class JSONStructuredExtraction extends Task implements RunnableTask<JSONS
     @NotNull
     private Property<List<String>> jsonFields;
 
-    @Schema(title = "Provider Configuration", description = "Configuration for the provider (e.g., API key, model name, endpoint).")
+    @Schema(title = "Language Model Provider")
     @NotNull
-    private ProviderConfig provider;
+    @PluginProperty
+    private ModelProvider provider;
+
+    @NotNull
+    @PluginProperty
+    @Builder.Default
+    private ChatConfiguration configuration = ChatConfiguration.empty();
 
     @Override
     public JSONStructuredExtraction.Output run(RunContext runContext) throws Exception {
@@ -108,13 +113,9 @@ public class JSONStructuredExtraction extends Task implements RunnableTask<JSONS
         String renderedSchemaName = runContext.render(schemaName).as(String.class).orElseThrow();
         List<String> renderedJsonFields = Property.asList(jsonFields, runContext, String.class);
 
-        Provider renderedType = runContext.render(provider.getType()).as(Provider.class).orElseThrow();
-        String renderedModelName = runContext.render(provider.getModelName()).as(String.class).orElse(null);
-        String renderedApiKey = runContext.render(provider.getApiKey()).as(String.class).orElse(null);
-        String renderedEndpoint = runContext.render(provider.getEndPoint()).as(String.class).orElse(null);
-
         // Get the appropriate model from the factory
-        ChatLanguageModel model = ChatModelFactory.createModel(renderedType, renderedApiKey, renderedModelName, renderedEndpoint);
+        ChatLanguageModel model = this.provider.chatLanguageModel(runContext, configuration);
+
         // Build JSON schema
         ResponseFormat responseFormat = ResponseFormat.builder()
             .type(ResponseFormatType.JSON)
@@ -134,7 +135,7 @@ public class JSONStructuredExtraction extends Task implements RunnableTask<JSONS
         // Generate structured JSON output
         ChatResponse answer = model.chat(chatRequest);
 
-        logger.info("Generated Structured Extraction: {}", answer);
+        logger.debug("Generated Structured Extraction: {}", answer);
 
         return Output.builder()
             .schemaName(renderedSchemaName)

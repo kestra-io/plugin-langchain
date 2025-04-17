@@ -5,14 +5,11 @@ import dev.langchain4j.model.image.ImageModel;
 import dev.langchain4j.model.output.Response;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
-import io.kestra.plugin.langchain4j.dto.image.ImageModelFactory;
-import io.kestra.plugin.langchain4j.dto.image.ProviderImage;
-import io.kestra.plugin.langchain4j.dto.image.ProviderImageConfig;
-import io.kestra.plugin.langchain4j.dto.image.Size;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -77,9 +74,10 @@ public class ImageGeneration extends Task implements RunnableTask<ImageGeneratio
     @NotNull
     private Property<String> prompt;
 
-    @Schema(title = "Provider Configuration", description = "Configuration for the provider (e.g., API key, model name)")
+    @Schema(title = "Language Model Provider")
     @NotNull
-    private ProviderImageConfig provider;
+    @PluginProperty
+    private ModelProvider provider;
 
 
     @Override
@@ -88,31 +86,12 @@ public class ImageGeneration extends Task implements RunnableTask<ImageGeneratio
 
         // Render input properties
         String renderedPrompt = runContext.render(prompt).as(String.class).orElseThrow();
-        ProviderImage renderedProviderType = provider.getType();
-        String renderedModelName = runContext.render(provider.getModelName()).as(String.class).orElse(null);
-        String renderedApiKey = runContext.render(provider.getApiKey()).as(String.class).orElse(null);
-        String renderedProjectId = runContext.render(provider.getProjectId()).as(String.class).orElse(null);
-        String renderedLocation = runContext.render(provider.getLocation()).as(String.class).orElse(null);
-        String renderedEndpoint = runContext.render(provider.getEndpoint()).as(String.class).orElse(null);
-        String renderedPublisher = runContext.render(provider.getPublisher()).as(String.class).orElse(null);
-        Boolean renderedDownload = runContext.render(provider.getDownload()).as(Boolean.class).orElse(false);
-        String renderedSize = runContext.render(provider.getSize()).as(Size.class).orElseThrow().getSize();
 
         // Get the model
-        ImageModel model = ImageModelFactory.createModel(
-            renderedProviderType,
-            renderedApiKey,
-            renderedModelName,
-            renderedProjectId,
-            renderedLocation,
-            renderedEndpoint,
-            renderedPublisher,
-            renderedSize,
-            renderedDownload
-        );
+        ImageModel model = provider.imageModel(runContext);
 
         Response<Image> imageUrl = model.generate(renderedPrompt);
-        logger.info("Generated Image URL: {}", imageUrl.content().url());
+        logger.debug("Generated Image URL: {}", imageUrl.content().url());
 
         return Output.builder()
             .imageUrl(String.valueOf(imageUrl.content().url()))

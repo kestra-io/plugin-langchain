@@ -3,13 +3,11 @@ package io.kestra.plugin.langchain4j;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import io.kestra.core.models.annotations.Example;
 import io.kestra.core.models.annotations.Plugin;
+import io.kestra.core.models.annotations.PluginProperty;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
-import io.kestra.plugin.langchain4j.dto.embedding.EmbeddingModelFactory;
-import io.kestra.plugin.langchain4j.dto.embedding.ProviderEmbedding;
-import io.kestra.plugin.langchain4j.dto.embedding.ProviderEmbeddingConfig;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.*;
@@ -87,24 +85,19 @@ public class EmbeddingRetrieval extends Task implements RunnableTask<EmbeddingRe
     @NotNull
     protected Property<String> prompt;
 
-    @Schema(title = "Provider Configuration", description = "Configuration for the provider (e.g., API key, model name, endpoint)")
+    @Schema(title = "Language Model Provider")
     @NotNull
-    private ProviderEmbeddingConfig provider;
+    @PluginProperty
+    private ModelProvider provider;
 
     @Override
     public EmbeddingRetrieval.Output run(RunContext runContext) throws Exception {
 
         // Render input properties
         String renderedInput = runContext.render(prompt).as(String.class).orElseThrow();
-        ProviderEmbedding renderedProviderType = provider.getType();
-        String renderedModelName = runContext.render(provider.getModelName()).as(String.class).orElse(null);
-        String renderedApiKey = runContext.render(provider.getApiKey()).as(String.class).orElse(null);
-        String renderedEndpoint = runContext.render(provider.getEndpoint()).as(String.class).orElse(null);
-        String renderedProjectId = runContext.render(provider.getProjectId()).as(String.class).orElse(null);
-        String renderedLocation = runContext.render(provider.getLocation()).as(String.class).orElse(null);
 
         // Get the model
-        EmbeddingModel model = EmbeddingModelFactory.createModel(renderedProviderType, renderedApiKey, renderedModelName, renderedEndpoint, renderedProjectId, renderedLocation);
+        EmbeddingModel model = provider.embeddingModel(runContext);
 
         var embedding = model.embed(renderedInput);
 
