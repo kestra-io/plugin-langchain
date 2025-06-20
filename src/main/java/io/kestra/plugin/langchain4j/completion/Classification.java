@@ -1,4 +1,4 @@
-package io.kestra.plugin.langchain4j;
+package io.kestra.plugin.langchain4j.completion;
 
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.ChatModel;
@@ -42,7 +42,7 @@ import java.util.List;
                 namespace: company.team
                 task:
                     id: text_classification
-                    type: io.kestra.core.plugin.langchain4j.Classification
+                    type: io.kestra.core.plugin.langchain4j.completion.Classification
                     prompt: "Classify the sentiment of this sentence: 'I love this product!'"
                     classes:
                       - positive
@@ -56,7 +56,8 @@ import java.util.List;
             }
         ),
     },
-    beta = true
+    beta = true,
+    aliases = "io.kestra.plugin.langchain4j.Classification"
 )
 public class Classification extends Task implements RunnableTask<Classification.Output> {
 

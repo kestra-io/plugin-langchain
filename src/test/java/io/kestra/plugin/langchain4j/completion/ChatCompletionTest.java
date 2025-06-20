@@ -1,10 +1,11 @@
-package io.kestra.plugin.langchain4j;
+package io.kestra.plugin.langchain4j.completion;
 
 import dev.langchain4j.model.anthropic.AnthropicChatModelName;
 import io.kestra.core.junit.annotations.KestraTest;
 import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
+import io.kestra.plugin.langchain4j.ContainerTest;
 import io.kestra.plugin.langchain4j.domain.ChatConfiguration;
 import io.kestra.plugin.langchain4j.provider.*;
 import jakarta.inject.Inject;

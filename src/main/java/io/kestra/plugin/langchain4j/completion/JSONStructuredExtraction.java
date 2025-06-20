@@ -1,4 +1,4 @@
-package io.kestra.plugin.langchain4j;
+package io.kestra.plugin.langchain4j.completion;
 
 import dev.langchain4j.data.message.UserMessage;
 import dev.langchain4j.model.chat.ChatModel;
@@ -47,7 +47,7 @@ import java.util.List;
                 namespace: company.team
                 task:
                     id: json_structured_extraction
-                    type: io.kestra.core.plugin.langchain4j.JSONStructuredExtraction
+                    type: io.kestra.core.plugin.langchain4j.completion.JSONStructuredExtraction
                     jsonFields:
                       - name
                       - City
@@ -61,7 +61,8 @@ import java.util.List;
             }
         ),
     },
-    beta = true
+    beta = true,
+    aliases = "io.kestra.plugin.langchain4j.JSONStructuredExtraction"
 )
 public class JSONStructuredExtraction extends Task implements RunnableTask<JSONStructuredExtraction.Output> {
 
