@@ -1,4 +1,4 @@
-package io.kestra.plugin.langchain4j;
+package io.kestra.plugin.langchain4j.completion;
 
 import dev.langchain4j.agent.tool.ToolSpecification;
 import dev.langchain4j.data.message.*;
@@ -55,7 +55,7 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
 
                 tasks:
                   - id: chat_completion
-                    type: io.kestra.core.plugin.langchain4j.ChatCompletion
+                    type: io.kestra.core.plugin.langchain4j.completion.ChatCompletion
                     provider:
                         type: io.kestra.plugin.langchain4j.provider.GoogleGemini
                         apiKey: "{{secret('GOOGLE_API_KEY')}}"
@@ -82,7 +82,7 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
 
                 tasks:
                   - id: chat_completion_with_tools
-                    type: io.kestra.core.plugin.langchain4j.ChatCompletion
+                    type: io.kestra.core.plugin.langchain4j.completion.ChatCompletion
                     provider:
                         type: io.kestra.plugin.langchain4j.provider.GoogleGemini
                         apiKey: "{{secret('GOOGLE_API_KEY')}}"
@@ -100,7 +100,8 @@ import static io.kestra.core.utils.Rethrow.throwFunction;
             }
         ),
     },
-    beta = true
+    beta = true,
+    aliases = "io.kestra.plugin.langchain4j.ChatCompletion"
 )
 public class ChatCompletion extends Task implements RunnableTask<ChatCompletion.Output> {
 
