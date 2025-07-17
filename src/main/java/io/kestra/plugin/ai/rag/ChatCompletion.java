@@ -22,6 +22,7 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
+import io.kestra.core.utils.ListUtils;
 import io.kestra.plugin.ai.domain.*;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
@@ -259,7 +260,7 @@ public class ChatCompletion extends Task implements RunnableTask<ChatCompletion.
     private Property<List<ContentRetrieverProvider>> contentRetrievers;
 
     @Schema(title = "Tools that the LLM may use to augment its response")
-    private Property<List<ToolProvider>> tools;
+    private List<ToolProvider> tools;
 
     @Schema(
         title = "Agent Memory",
@@ -269,7 +270,7 @@ public class ChatCompletion extends Task implements RunnableTask<ChatCompletion.
 
     @Override
     public Output run(RunContext runContext) throws Exception {
-        List<ToolProvider> toolProviders = runContext.render(tools).asList(ToolProvider.class);
+        List<ToolProvider> toolProviders = ListUtils.emptyOnNull(tools);
 
         ChatMemory chatMemory;
         if (memory != null) {
