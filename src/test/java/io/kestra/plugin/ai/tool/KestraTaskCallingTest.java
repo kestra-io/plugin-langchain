@@ -5,8 +5,8 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.runners.RunContext;
 import io.kestra.core.runners.RunContextFactory;
 import io.kestra.plugin.ai.completion.ChatCompletion;
-import io.kestra.plugin.ai.domain.ChatConfiguration;
 import io.kestra.plugin.ai.provider.OpenAI;
+import io.kestra.plugin.core.log.Log;
 import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
@@ -16,7 +16,7 @@ import java.util.Map;
 import static org.assertj.core.api.Assertions.assertThat;
 
 @KestraTest
-class StdioMcpClientTest {
+class KestraTaskCallingTest {
     @Inject
     private RunContextFactory runContextFactory;
 
@@ -37,17 +37,20 @@ class StdioMcpClientTest {
                 .build()
             )
             .tools(List.of(
-                StdioMcpClient.builder().command(Property.ofValue(List.of("docker", "run", "--rm", "-i", "mcp/everything"))).build())
-            )
+                KestraTaskCalling.builder().tasks(
+                    List.of(
+                        Log.builder().id("log").type(Log.class.getName()).message("{{agent.message}}").build()
+                    )
+                ).build()
+            ))
             .messages(Property.ofValue(
-                List.of(ChatCompletion.ChatMessage.builder().type(ChatCompletion.ChatMessageType.USER).content("What is 5+12? Use the provided tool to answer and always assume that the tool is correct.").build()
+                List.of(
+                    ChatCompletion.ChatMessage.builder().type(ChatCompletion.ChatMessageType.SYSTEM).content("You are an AI agent, please use the provided tool to fulfill the request.").build(),
+                    ChatCompletion.ChatMessage.builder().type(ChatCompletion.ChatMessageType.USER).content("I want to log the following message: \"Hello World!\"").build()
                 )))
-            // Use a low temperature and a fixed seed so the completion would be more deterministic
-            .configuration(ChatConfiguration.builder().temperature(Property.ofValue(0.1)).seed(Property.ofValue(123456789)).build())
             .build();
 
         var output = chat.run(runContext);
-        assertThat(output.getAiResponse()).contains("17");
+        assertThat(output.getAiResponse()).contains("success");
     }
-
 }

@@ -65,9 +65,9 @@ class HttpMcpClientTest {
                 .baseUrl(Property.ofExpression("{{ baseUrl }}"))
                 .build()
             )
-            .tools(Property.ofValue(
-                List.of(HttpMcpClient.builder().sseUrl(Property.ofExpression("{{mcpSseUrl}}")).timeout(Property.ofValue(Duration.ofSeconds(60))).build())
-            ))
+            .tools(List.of(
+                HttpMcpClient.builder().sseUrl(Property.ofExpression("{{mcpSseUrl}}")).timeout(Property.ofValue(Duration.ofSeconds(60))).build())
+            )
             .messages(Property.ofValue(
                 List.of(ChatCompletion.ChatMessage.builder().type(ChatCompletion.ChatMessageType.USER).content("What is 5+12? Use the provided tool to answer and always assume that the tool is correct.").build()
                 )))

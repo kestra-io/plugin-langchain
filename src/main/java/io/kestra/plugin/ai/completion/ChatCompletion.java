@@ -17,6 +17,7 @@ import io.kestra.core.models.property.Property;
 import io.kestra.core.models.tasks.RunnableTask;
 import io.kestra.core.models.tasks.Task;
 import io.kestra.core.runners.RunContext;
+import io.kestra.core.utils.ListUtils;
 import io.kestra.plugin.ai.domain.ChatConfiguration;
 import io.kestra.plugin.ai.domain.ModelProvider;
 import io.kestra.plugin.ai.domain.TokenUsage;
@@ -129,7 +130,7 @@ public class ChatCompletion extends Task implements RunnableTask<ChatCompletion.
 
     @Schema(title = "Tools that the LLM may use to augment its response")
     @Nullable
-    private Property<List<ToolProvider>> tools;
+    private List<ToolProvider> tools;
 
     @Override
     public ChatCompletion.Output run(RunContext runContext) throws Exception {
@@ -151,7 +152,7 @@ public class ChatCompletion extends Task implements RunnableTask<ChatCompletion.
         // Get the appropriate model from the factory
         ChatModel model = this.provider.chatModel(runContext, configuration);
 
-        List<ToolProvider> toolProviders = runContext.render(tools).asList(ToolProvider.class);
+        List<ToolProvider> toolProviders = ListUtils.emptyOnNull(tools);
         try {
             ChatMemory chatMemory = MessageWindowChatMemory.withMaxMessages(100); // this should be enough for most use cases
             // add all messages to memory except the system message and the last message that will be used for completion
